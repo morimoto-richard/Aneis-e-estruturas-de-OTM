@@ -49,14 +49,14 @@ namespace Aneis_e_estruturas_de_OTM
             comboBox1.ItemsSource = null;
             comboBox2.ItemsSource = null;
             comboBox3.ItemsSource = null;
-           // comboBox4.ItemsSource = null;
+            // comboBox4.ItemsSource = null;
 
             comboBox1.SelectedItem = null;
             comboBox2.SelectedItem = null;
             comboBox3.SelectedItem = null;
             // comboBox4.SelectedItem = null;
 
-            currentStructureSet = null;             
+            currentStructureSet = null;
         }
 
         //Button to open the patient
@@ -72,13 +72,13 @@ namespace Aneis_e_estruturas_de_OTM
 
             try
             {
-                if(currentPatient != null)
+                if (currentPatient != null)
                 {
                     app.ClosePatient();
                     currentPatient = null;
-                    
+
                 }
-                               
+
 
                 //clear all combobox
                 clearComboBoxes();
@@ -134,8 +134,8 @@ namespace Aneis_e_estruturas_de_OTM
 
                     comboBox1.ItemsSource = currenStructures;
 
-                    comboBox2.ItemsSource = new List<int> { 0,10,20,30 };
-                    comboBox3.ItemsSource = new List<int> { 10,20,30 };
+                    comboBox2.ItemsSource = new List<int> { 0, 10, 20, 30 };
+                    comboBox3.ItemsSource = new List<int> { 10, 20, 30 };
                 }
                 else
                 {
@@ -200,14 +200,31 @@ namespace Aneis_e_estruturas_de_OTM
             }
 
             //------------------------------------------
+            // Remove existing structures if present
+            //------------------------------------------
+            string innerId = $"{selectedStructure.Id}_inner";
+            string outerId = $"{selectedStructure.Id}_outer";
+            string ringId = $"{selectedStructure.Id}_Ring";
+
+            var innerStruct = currentStructureSet.Structures.FirstOrDefault(s => s.Id == innerId);
+            if (innerStruct != null)
+                currentStructureSet.RemoveStructure(innerStruct);
+
+            var outerStruct = currentStructureSet.Structures.FirstOrDefault(s => s.Id == outerId);
+            if (outerStruct != null)
+                currentStructureSet.RemoveStructure(outerStruct);
+
+            var ringStruct = currentStructureSet.Structures.FirstOrDefault(s => s.Id == ringId);
+            if (ringStruct != null)
+                currentStructureSet.RemoveStructure(ringStruct);
+
+            //------------------------------------------
             // Create INNER structure
             //------------------------------------------
 
-            string innerId = $"{selectedStructure.Id}_inner";
-
             if (!currentStructureSet.CanAddStructure("CONTROL", innerId))
             {
-                MessageBox.Show($"{innerId} already exists.");
+                MessageBox.Show($"{innerId} already exists and cannot be removed.");
                 return;
             }
 
@@ -231,11 +248,9 @@ namespace Aneis_e_estruturas_de_OTM
             // Create OUTER structure
             //------------------------------------------
 
-            string outerId = $"{selectedStructure.Id}_outer";
-
             if (!currentStructureSet.CanAddStructure("CONTROL", outerId))
             {
-                MessageBox.Show($"{outerId} already exists.");
+                MessageBox.Show($"{outerId} already exists and cannot be removed.");
                 return;
             }
 
@@ -259,11 +274,9 @@ namespace Aneis_e_estruturas_de_OTM
             // Create Ring
             //------------------------------------------
 
-            string ringId = $"{selectedStructure.Id}_Ring";
-
             if (!currentStructureSet.CanAddStructure("CONTROL", ringId))
             {
-                MessageBox.Show($"{ringId} already exists.");
+                MessageBox.Show($"{ringId} already exists and cannot be removed.");
                 return;
             }
 
@@ -297,6 +310,121 @@ namespace Aneis_e_estruturas_de_OTM
 
             app.ClosePatient();
 
+            //// Clear patient search box and reset UI for new search
+            //textBox1.Text = string.Empty;
+            //clearComboBoxes();
+            //comboBox4.ItemsSource = null;
+            //comboBox4.SelectedItem = null;
+            //currentPatient = null;
+            //currentStructureSet = null;
+            //currentCourse = null;
+        }
+        //teste para subir o projeto no GitHub
+
+        //teste 2 para GitHub
+
+        // Add this method to MainWindow class
+        private void Button_CropOARs_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentStructureSet == null)
+            {
+                MessageBox.Show("No structure set loaded.");
+                return;
+            }
+
+            // Find all PTV structures (assuming they contain "PTV" in the Id)
+            var ptvs = currentStructureSet.Structures
+                .Where(s => s.Id.ToUpper().Contains("PTV") && !s.IsEmpty && s.HasSegment)
+                .ToList();
+
+            if (!ptvs.Any())
+            {
+                MessageBox.Show("No PTV structure found.");
+                return;
+            }
+
+            // Get all OARs (DicomType == "ORGAN", not empty, not already OTM, not CONTROL structures)
+            var oars = currentStructureSet.Structures
+                .Where(s => s.DicomType.Equals("ORGAN", StringComparison.OrdinalIgnoreCase)
+                    && !s.Id.ToUpper().Contains("OTM")
+                    && !s.IsEmpty
+                    && s.HasSegment
+                    && !s.DicomType.Equals("CONTROL", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (!oars.Any())
+            {
+                MessageBox.Show("No OAR structures found.");
+                return;
+            }
+
+            int cropMargin = 5; // mm
+            bool anyCropped = false;
+
+            foreach (var oar in oars)
+            {
+                bool intersects = false;
+                SegmentVolume ptvMarginVolume = null;
+
+                foreach (var ptv in ptvs)
+                {
+                    var ptvMargin = ptv.Margin(cropMargin);
+                    if (ptvMargin == null)
+                        continue;
+
+                    var intersection = oar.SegmentVolume.And(ptvMargin);
+
+                    if (intersection != null)
+                    {
+                        intersects = true;
+                        ptvMarginVolume = ptvMargin;
+                        break;
+                    }
+                }
+
+                if (!intersects || ptvMarginVolume == null)
+                    continue;
+
+                string otmId = $"{oar.Id}_OTM";
+
+                // Remove existing OTM structure if present
+                var existingOtm = currentStructureSet.Structures.FirstOrDefault(s => s.Id == otmId);
+                if (existingOtm != null)
+                    currentStructureSet.RemoveStructure(existingOtm);
+
+                if (!currentStructureSet.CanAddStructure(oar.DicomType, otmId))
+                {
+                    MessageBox.Show($"Cannot add structure {otmId}.");
+                    continue;
+                }
+
+                var croppedVolume = oar.SegmentVolume.Sub(ptvMarginVolume);
+
+                if (croppedVolume == null)
+                {
+                    MessageBox.Show($"Boolean subtraction failed for {oar.Id}.");
+                    continue;
+                }
+
+                var otmStruct = currentStructureSet.AddStructure(oar.DicomType, otmId);
+
+                if (oar.IsHighResolution)
+                    otmStruct.ConvertToHighResolution();
+
+                otmStruct.SegmentVolume = croppedVolume;
+                anyCropped = true;
+            }
+
+            if (anyCropped)
+            {
+                app.SaveModifications();
+                MessageBox.Show("OARs cropped and OTM structures created.");
+            }
+            else
+            {
+                MessageBox.Show("No OARs of type ORGAN intersect with any PTV. No OTM structures created.");
+            }
+
             // Clear patient search box and reset UI for new search
             textBox1.Text = string.Empty;
             clearComboBoxes();
@@ -306,12 +434,5 @@ namespace Aneis_e_estruturas_de_OTM
             currentStructureSet = null;
             currentCourse = null;
         }
-        //teste para subir o projeto no GitHub
-
-        //teste 2 para GitHub
-
-        
     }
-
 }
-
