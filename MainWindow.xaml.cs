@@ -296,6 +296,15 @@ namespace Aneis_e_estruturas_de_OTM
             MessageBox.Show($"{ringStructure.Id} created successfully.");
 
             app.ClosePatient();
+
+            // Clear patient search box and reset UI for new search
+            textBox1.Text = string.Empty;
+            clearComboBoxes();
+            comboBox4.ItemsSource = null;
+            comboBox4.SelectedItem = null;
+            currentPatient = null;
+            currentStructureSet = null;
+            currentCourse = null;
         }
         //teste para subir o projeto no GitHub
 
