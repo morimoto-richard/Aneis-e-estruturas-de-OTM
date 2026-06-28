@@ -54,7 +54,7 @@
 
             <Button Content="Create ring" FontWeight="Bold" Click="Button_Click2" Grid.Column="0" Grid.Row="4" Height="20" Width="100" Margin="0,20,0,0" Background="#FF83F6F2"/>
 
-
+            <Button Content="Crop Structure" FontWeight="Bold" Click="Button_CropOARs_Click" Grid.Column="1" Grid.Row="4" Height="20" Width="100" Margin="0,20,0,0" Background="#FF83F6F2" HorizontalAlignment="Center"/>
 
         </Grid>
     </Border>
