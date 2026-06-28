@@ -168,87 +168,140 @@ namespace Aneis_e_estruturas_de_OTM
         private void Button_Click2(object sender, RoutedEventArgs e)
         {
             string structureId = comboBox1.SelectedItem as string;
+
             if (string.IsNullOrEmpty(structureId))
             {
                 MessageBox.Show("Select a structure.");
                 return;
             }
-            if (comboBox2.SelectedItem == null)
+
+            if (comboBox2.SelectedItem == null || comboBox3.SelectedItem == null)
             {
-                MessageBox.Show("Select a margin.");
+                MessageBox.Show("Select both margins.");
                 return;
             }
 
-            //Declare the selected structure from combobox
-            Structure selectedStructure = currentStructureSet.Structures.FirstOrDefault(sss => sss.Id == structureId);
+            Structure selectedStructure = currentStructureSet.Structures
+                .FirstOrDefault(s => s.Id == structureId);
 
             if (selectedStructure == null)
             {
-                MessageBox.Show("Structure was not found.");
+                MessageBox.Show("Structure not found.");
                 return;
             }
 
-            int margin1 = (int)comboBox2.SelectedItem;
+            int innerMargin = (int)comboBox2.SelectedItem;
+            int outerMargin = (int)comboBox3.SelectedItem;
 
-            //message of structure expanded
-            string structureExpanded1 = $"{selectedStructure.Id} expanded by {margin1}cm";
-
-            if (!currentStructureSet.CanAddStructure("CONTROL", structureExpanded1))
+            if (outerMargin <= innerMargin)
             {
-                MessageBox.Show("The name of structure already exists or is invalid.");
+                MessageBox.Show("Outer margin must be greater than inner margin.");
                 return;
             }
-            else
+
+            //------------------------------------------
+            // Create INNER structure
+            //------------------------------------------
+
+            string innerId = $"{selectedStructure.Id}_inner";
+
+            if (!currentStructureSet.CanAddStructure("CONTROL", innerId))
             {
-                Structure structureMargin = currentStructureSet.AddStructure("CONTROL", structureExpanded1);
-                structureMargin.SegmentVolume = selectedStructure.Margin(margin1);
-
-                structureMargin.Id = $"{selectedStructure.Id}_inner";
-
-                MessageBox.Show($"{structureExpanded1} was created.");
-
-            }
-
-            //Margin for second structure expanded
-            int margin2 = (int)comboBox3.SelectedItem;
-
-            string structureExpanded2 = $"{selectedStructure.Id} expanded by {margin2}cm";
-
-            if (!currentStructureSet.CanAddStructure("CONTROL", structureExpanded2))
-            {
-                MessageBox.Show("The name of structure already exists or is invalid.");
+                MessageBox.Show($"{innerId} already exists.");
                 return;
             }
-            else
+
+            Structure innerStructure =
+                currentStructureSet.AddStructure("CONTROL", innerId);
+
+            if (selectedStructure.IsHighResolution)
+                innerStructure.ConvertToHighResolution();
+
+            SegmentVolume innerVolume = selectedStructure.Margin(innerMargin);
+
+            if (innerVolume == null)
             {
-                Structure structureMargin2 = currentStructureSet.AddStructure("CONTROL", structureExpanded2);
-                structureMargin2.SegmentVolume = selectedStructure.Margin(margin2);
-
-                structureMargin2.Id = $"{selectedStructure.Id}_outer";
-                MessageBox.Show($"{structureExpanded2} was created.");
-
+                MessageBox.Show("Unable to create inner margin.");
+                return;
             }
 
-            
-            Structure structureRing = currentStructureSet.AddStructure("CONTROL", $"{selectedStructure}_Ring");
+            innerStructure.SegmentVolume = innerVolume;
 
-            Structure innerStructure = currentStructureSet.Structures.FirstOrDefault(sss => sss.Id.Contains("inner"));
+            //------------------------------------------
+            // Create OUTER structure
+            //------------------------------------------
 
-            Structure outterStructure = currentStructureSet.Structures.FirstOrDefault(sss => sss.Id.Contains("outer"));
-            structureRing.SegmentVolume = outterStructure.Sub(innerStructure.SegmentVolume);
+            string outerId = $"{selectedStructure.Id}_outer";
+
+            if (!currentStructureSet.CanAddStructure("CONTROL", outerId))
+            {
+                MessageBox.Show($"{outerId} already exists.");
+                return;
+            }
+
+            Structure outerStructure =
+                currentStructureSet.AddStructure("CONTROL", outerId);
+
+            if (selectedStructure.IsHighResolution)
+                outerStructure.ConvertToHighResolution();
+
+            SegmentVolume outerVolume = selectedStructure.Margin(outerMargin);
+
+            if (outerVolume == null)
+            {
+                MessageBox.Show("Unable to create outer margin.");
+                return;
+            }
+
+            outerStructure.SegmentVolume = outerVolume;
+
+            //------------------------------------------
+            // Create Ring
+            //------------------------------------------
+
+            string ringId = $"{selectedStructure.Id}_Ring";
+
+            if (!currentStructureSet.CanAddStructure("CONTROL", ringId))
+            {
+                MessageBox.Show($"{ringId} already exists.");
+                return;
+            }
+
+            Structure ringStructure =
+                currentStructureSet.AddStructure("CONTROL", ringId);
+
+            if (selectedStructure.IsHighResolution)
+                ringStructure.ConvertToHighResolution();
+
+            SegmentVolume ringVolume =
+                outerStructure.SegmentVolume.Sub(innerStructure.SegmentVolume);
+
+            if (ringVolume == null)
+            {
+                MessageBox.Show("Boolean subtraction failed.");
+                return;
+            }
+
+            ringStructure.SegmentVolume = ringVolume;
+
+            //------------------------------------------
+            // Remove temporary structures
+            //------------------------------------------
 
             currentStructureSet.RemoveStructure(innerStructure);
-            currentStructureSet.RemoveStructure(outterStructure);
-
-            MessageBox.Show($"The {structureRing} was successfull created.");
+            currentStructureSet.RemoveStructure(outerStructure);
 
             app.SaveModifications();
+
+            MessageBox.Show($"{ringStructure.Id} created successfully.");
+
             app.ClosePatient();
-
         }
-        //teste local repository
+        //teste para subir o projeto no GitHub
 
+        //teste 2 para GitHub
 
+        
     }
 
 }
