@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
 
+
 [assembly: ESAPIScript(IsWriteable = true)]
 
 namespace Aneis_e_estruturas_de_OTM
@@ -332,9 +333,9 @@ namespace Aneis_e_estruturas_de_OTM
                 return;
             }
 
-            // Find all PTV structures (assuming they contain "PTV" in the Id)
+            // Find all PTV structures (assuming they contain "PTV" in the Id, case-insensitive)
             var ptvs = currentStructureSet.Structures
-                .Where(s => s.Id.ToUpper().Contains("PTV") && !s.IsEmpty && s.HasSegment)
+                .Where(s => s.Id.IndexOf("PTV", StringComparison.OrdinalIgnoreCase) >= 0 && !s.IsEmpty && s.HasSegment)
                 .ToList();
 
             if (!ptvs.Any())
