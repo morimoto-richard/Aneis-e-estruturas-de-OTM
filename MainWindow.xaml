@@ -186,11 +186,11 @@
                       BorderBrush="#B0BEC5"
                       SelectionChanged="comboBox3_SelectionChanged"/>
 
-            <Button Content="Criar Anel"
+            <Button Content="Crear Anillo y Cropar estructuras"
                     FontWeight="Bold"
                     Click="Button_Click2"
                     Grid.Column="0" Grid.Row="4"
-                    Height="28" Width="120"
+                    Height="28" Width="200"
                     Margin="0,24,0,0"
                     Background="#A5D6A7"
                     Foreground="#263238"
@@ -199,7 +199,7 @@
                     HorizontalAlignment="Center"
                     Cursor="Hand"/>
 
-            <Button Content="Cortar Estrutura"
+            <!-- <Button Content="Cortar Estrutura"
                     FontWeight="Bold"
                     Click="Button_CropOARs_Click"
                     Grid.Column="1" Grid.Row="4"
@@ -210,7 +210,7 @@
                     BorderBrush="#FFA726"
                     BorderThickness="1"
                     HorizontalAlignment="Center"
-                    Cursor="Hand"/>
+                    Cursor="Hand"/>-->
         </Grid>
     </Border>
 </Window>
