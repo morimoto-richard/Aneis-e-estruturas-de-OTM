@@ -5,57 +5,212 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Aneis_e_estruturas_de_OTM"
         mc:Ignorable="d"
-        Title="Estruturas OTM" Height="450" Width="800" Background="AliceBlue">
+        Title="Estruturas OTM" Height="480" Width="860" Background="#F0F4FA"
+        WindowStartupLocation="CenterScreen">
 
-    <Border BorderBrush="Gray" BorderThickness="2" Padding="20" CornerRadius="10">
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.92"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
 
+    <Border BorderBrush="#B0BEC5" BorderThickness="2" Padding="24" CornerRadius="14" Background="White" >
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="auto"/>
-                <ColumnDefinition/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
-                <RowDefinition Height="20"/>
+                <RowDefinition Height="30"/>
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Text="Estruturas de otimização" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="4"  HorizontalAlignment="Center" FontSize="15" FontFamily="Arial" FontWeight="ExtraBlack" VerticalAlignment="Center"/>
+            <TextBlock Text="Estruturas de Otimização"
+                       Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="4"
+                       HorizontalAlignment="Center"
+                       FontSize="22"
+                       FontFamily="Segoe UI"
+                       FontWeight="Bold"
+                       Foreground="#37474F"
+                       Margin="0,0,0,18"
+                       VerticalAlignment="Center"/>
 
+            <Button Content="Abrir Paciente"
+                    Grid.Row="1" Grid.Column="0"
+                    FontSize="13"
+                    FontWeight="SemiBold"
+                    Margin="5,0,0,0"
+                    Width="110" Height="28"
+                    HorizontalAlignment="Left"
+                    Background="#90CAF9"
+                    Foreground="#263238"
+                    BorderBrush="#42A5F5"
+                    BorderThickness="1"
+                    Cursor="Hand"
+                    Click="Button_Click" />
 
-            <Button Content="Open patient" Grid.Row="1" Grid.Column="0"  FontSize="12" FontWeight="Bold" Margin="5,0,0,0" Width="80" Height="20" HorizontalAlignment="Left" Click="Button_Click" />
+            <TextBox x:Name="textBox1"
+                     HorizontalAlignment="Left"
+                     Margin="130,0,0,0"
+                     Width="420"
+                     Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1"
+                     VerticalAlignment="Center"
+                     FontSize="13"
+                     Padding="6"
+                     Background="#ECEFF1"
+                     BorderBrush="#B0BEC5"
+                     BorderThickness="1"
+                     Foreground="#263238"/>
 
-            <TextBox x:Name="textBox1" HorizontalAlignment="Left" Margin="100,0,0,0" Width="400" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" VerticalAlignment="Center"/>
+            <TextBlock Text="StructureSet"
+                       Grid.Column="0" Grid.Row="2"
+                       HorizontalAlignment="Center"
+                       FontSize="13"
+                       FontWeight="Bold"
+                       Foreground="#37474F"
+                       Margin="0,10,0,0"/>
 
-            <TextBlock Text="StructureSet" Grid.Column="0" Grid.Row="2" HorizontalAlignment="Center" FontSize="12" FontWeight="Bold"/>
+            <ComboBox x:Name="comboBox4"
+                      Grid.Column="0" Grid.Row="2"
+                      Margin="0,34,0,0"
+                      HorizontalAlignment="Center"
+                      Width="140" Height="26"
+                      FontSize="13"
+                      Background="#F5F5F5"
+                      BorderBrush="#B0BEC5"
+                      SelectionChanged="comboBox4_SelectionChanged"/>
 
-            <ComboBox x:Name="comboBox4" Grid.Column="0" Grid.Row="2" Margin="0,20,0,0" HorizontalAlignment="Center" Width="120" Height="20" SelectionChanged="comboBox4_SelectionChanged"/>
-
-            <StackPanel Grid.Column="0" Grid.Row="3" HorizontalAlignment="Center" >
-                <TextBlock Text="Structure" FontSize="12" FontWeight="Bold" FontFamily="arial" HorizontalAlignment="Center" Grid.Row="3" Height="20" Margin="0,10,0,0"/>
+            <StackPanel Grid.Column="0" Grid.Row="3" HorizontalAlignment="Center" Margin="0,10,0,0">
+                <TextBlock Text="Structure"
+                           FontSize="13"
+                           FontWeight="Bold"
+                           FontFamily="Segoe UI"
+                           HorizontalAlignment="Center"
+                           Height="22"
+                           Foreground="#37474F"/>
             </StackPanel>
 
-            <ComboBox x:Name="comboBox1" Width="120" Height="20" Grid.Row="3" Grid.Column="0" Margin="0,30,0,0"/>
+            <ComboBox x:Name="comboBox1"
+                      Width="140" Height="26"
+                      Grid.Row="3" Grid.Column="0"
+                      Margin="0,38,0,0"
+                      FontSize="13"
+                      Background="#F5F5F5"
+                      BorderBrush="#B0BEC5"/>
 
-            <Image Grid.Column="3" HorizontalAlignment="Left" Height="100" Margin="156,0,0,0" Grid.RowSpan="3" VerticalAlignment="Center" Width="100" Source="/cosmo ninja.png"/>
+            <Image Grid.Column="3"
+                   HorizontalAlignment="Left"
+                   Height="120"
+                   Margin="138,0,0,0"
+                   Grid.RowSpan="3"
+                   VerticalAlignment="Center"
+                   Width="120"
+                   Source="/cosmo ninja.png"
+                   Stretch="UniformToFill"
+                   ClipToBounds="True"
+                   SnapsToDevicePixels="True"
+                   />
 
-            <TextBlock Text="Margin from structure (mm)" FontSize="12" FontWeight="Bold" FontFamily="arial" HorizontalAlignment="Center" Grid.Row="3" Grid.Column="1" Height="20" Margin="0,10,0,0" VerticalAlignment="Top"/>
+            <TextBlock Text="Margem da Estrutura (mm)"
+                       FontSize="13"
+                       FontWeight="Bold"
+                       FontFamily="Segoe UI"
+                       HorizontalAlignment="Center"
+                       Grid.Row="3" Grid.Column="1"
+                       Height="22"
+                       Margin="0,10,0,0"
+                       VerticalAlignment="Top"
+                       Foreground="#37474F"/>
 
-            <ComboBox x:Name="comboBox2" Grid.Row="3" Grid.Column="1" Width="120" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,33,0,0" SelectionChanged="comboBox2_SelectionChanged"/>
+            <ComboBox x:Name="comboBox2"
+                      Grid.Row="3" Grid.Column="1"
+                      Width="140" Height="26"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Top"
+                      Margin="20,38,0,0"
+                      FontSize="13"
+                      Background="#F5F5F5"
+                      BorderBrush="#B0BEC5"
+                      SelectionChanged="comboBox2_SelectionChanged"/>
 
-            <TextBlock Text="Ring Size (mm)" FontSize="12" FontWeight="Bold" FontFamily="arial" HorizontalAlignment="Center" Grid.Row="3" Grid.Column="2" Height="20" Margin="0,10,0,0" VerticalAlignment="Top"/>
+            <TextBlock Text="Tamanho do Anel (mm)"
+                       FontSize="13"
+                       FontWeight="Bold"
+                       FontFamily="Segoe UI"
+                       HorizontalAlignment="Center"
+                       Grid.Row="3" Grid.Column="2"
+                       Height="22"
+                       Margin="0,10,0,0"
+                       VerticalAlignment="Top"
+                       Foreground="#37474F"/>
 
-            <ComboBox x:Name="comboBox3" Grid.Row="3" Grid.Column="2" Width="120" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,33,0,0" SelectionChanged="comboBox3_SelectionChanged"/>
+            <ComboBox x:Name="comboBox3"
+                      Grid.Row="3" Grid.Column="2"
+                      Width="140" Height="26"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Top"
+                      Margin="20,38,0,0"
+                      FontSize="13"
+                      Background="#F5F5F5"
+                      BorderBrush="#B0BEC5"
+                      SelectionChanged="comboBox3_SelectionChanged"/>
 
-            <Button Content="Create ring" FontWeight="Bold" Click="Button_Click2" Grid.Column="0" Grid.Row="4" Height="20" Width="100" Margin="0,20,0,0" Background="#FF83F6F2"/>
+            <Button Content="Criar Anel"
+                    FontWeight="Bold"
+                    Click="Button_Click2"
+                    Grid.Column="0" Grid.Row="4"
+                    Height="28" Width="120"
+                    Margin="0,24,0,0"
+                    Background="#A5D6A7"
+                    Foreground="#263238"
+                    BorderBrush="#66BB6A"
+                    BorderThickness="1"
+                    HorizontalAlignment="Center"
+                    Cursor="Hand"/>
 
-            <Button Content="Crop Structure" FontWeight="Bold" Click="Button_CropOARs_Click" Grid.Column="1" Grid.Row="4" Height="20" Width="100" Margin="0,20,0,0" Background="#FF83F6F2" HorizontalAlignment="Center"/>
-
+            <Button Content="Cortar Estrutura"
+                    FontWeight="Bold"
+                    Click="Button_CropOARs_Click"
+                    Grid.Column="1" Grid.Row="4"
+                    Height="28" Width="120"
+                    Margin="0,24,0,0"
+                    Background="#FFCC80"
+                    Foreground="#263238"
+                    BorderBrush="#FFA726"
+                    BorderThickness="1"
+                    HorizontalAlignment="Center"
+                    Cursor="Hand"/>
         </Grid>
     </Border>
 </Window>
