@@ -35,7 +35,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>cosmo cansado.ico</ApplicationIcon>
+    <ApplicationIcon>
+    </ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -110,9 +111,6 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="cosmo ninja.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="cosmo cansado.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

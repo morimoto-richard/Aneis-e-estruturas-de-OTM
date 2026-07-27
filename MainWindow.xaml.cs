@@ -280,90 +280,134 @@ namespace Aneis_e_estruturas_de_OTM
             app.SaveModifications();   // salva o Ring antes de seguir pro crop
 
             //==========================================================
-            // ETAPA 2 - CROPAR OS OARs (mesma lógica do botão antigo)
+            // ETAPA 2 - CROPAR OS OARs (versão corrigida)
             //==========================================================
+            //
+            // A versão original (e minhas duas tentativas anteriores)
+            // procuravam por QUALQUER estrutura com "PTV" no nome em todo
+            // o structure set. Isso é o bug de verdade: se o plano tem
+            // mais de uma estrutura com "PTV" no Id (boost, linfonodos,
+            // outro PTV de outro curso, etc.), o crop podia pegar um PTV
+            // que não tem nada a ver com o anel que acabou de ser criado
+            // -- explicando tanto o corte inconsistente entre Reto/Bexiga
+            // quanto o Reto "partido" e a Bexiga sumindo nas tentativas
+            // anteriores (a união de PTVs errados gera uma geometria sem
+            // sentido pra subtrair).
+            //
+            // A correção certa: usar o MESMO PTV que o usuário já
+            // escolheu no combo pra criar o anel (selectedStructure) --
+            // sem procurar por nome, sem ambiguidade.
+            //
+            // Também mantive o try/catch por OAR: antes, uma exceção em
+            // qualquer OAR abortava o laço inteiro e os OARs seguintes
+            // nunca eram processados, sem nenhuma mensagem de erro (este
+            // projeto não tem handler de exceção não tratada no
+            // App.xaml.cs).
 
-            var ptvs = currentStructureSet.Structures
-                .Where(s => s.Id.IndexOf("PTV", StringComparison.OrdinalIgnoreCase) >= 0 && !s.IsEmpty && s.HasSegment)
-                .ToList();
-
-            if (!ptvs.Any())
-            {
-                MessageBox.Show($"{ringStructure.Id} created successfully. No PTV found for cropping.");
-                return;
-            }
-
+            // Filtra só por NOME (Reto/Bladder, em português e inglês) em
+            // vez de por DicomType == "ORGAN" -- foi isso que fazia a
+            // Bexiga nunca ser cropada nesse structure set: ela está
+            // tipada como "Avoidance" no Eclipse, não "Organ", então o
+            // filtro antigo simplesmente pulava ela sem avisar nada.
+            // Como agora o objetivo é só Reto e Bexiga (não qualquer
+            // OAR do plano), o filtro por nome também é mais preciso.
             var oars = currentStructureSet.Structures
-                .Where(s => s.DicomType.Equals("ORGAN", StringComparison.OrdinalIgnoreCase)
-                    && !s.Id.ToUpper().Contains("OTM")
+                .Where(s => !s.Id.ToUpper().Contains("OTM")
                     && !s.IsEmpty
-                    && s.HasSegment)
+                    && s.HasSegment
+                    && (s.Id.IndexOf("Rectum", StringComparison.OrdinalIgnoreCase) >= 0
+                        || s.Id.IndexOf("Reto", StringComparison.OrdinalIgnoreCase) >= 0
+                        || s.Id.IndexOf("Bladder", StringComparison.OrdinalIgnoreCase) >= 0
+                        || s.Id.IndexOf("Bexiga", StringComparison.OrdinalIgnoreCase) >= 0))
                 .ToList();
 
             if (!oars.Any())
             {
-                MessageBox.Show($"{ringStructure.Id} created successfully. No OAR found for cropping.");
+                MessageBox.Show($"{ringStructure.Id} created successfully. No Rectum/Bladder structure found for cropping.");
                 return;
             }
 
             int cropMargin = 5; // mm
+
+            SegmentVolume ptvMargin = selectedStructure.Margin(cropMargin);
+            if (ptvMargin == null)
+            {
+                MessageBox.Show($"{ringStructure.Id} created successfully. Could not compute margin from {selectedStructure.Id}.");
+                return;
+            }
+
             bool anyCropped = false;
+            var falhas = new List<string>();
 
             foreach (var oar in oars)
             {
-                bool intersects = false;
-                SegmentVolume ptvMarginVolume = null;
-
-                foreach (var ptv in ptvs)
+                try
                 {
-                    var ptvMargin = ptv.Margin(cropMargin);
-                    if (ptvMargin == null)
-                        continue;
+                    string otmId = $"{oar.Id}_OTM";
 
-                    var intersection = oar.SegmentVolume.And(ptvMargin);
+                    var existingOtm = currentStructureSet.Structures.FirstOrDefault(s => s.Id == otmId);
+                    if (existingOtm != null)
+                        currentStructureSet.RemoveStructure(existingOtm);
 
-                    if (intersection != null)
+                    if (!currentStructureSet.CanAddStructure(oar.DicomType, otmId))
                     {
-                        intersects = true;
-                        ptvMarginVolume = ptvMargin;
-                        break;
+                        falhas.Add($"{oar.Id}: não foi possível criar {otmId}.");
+                        continue;
                     }
+
+                    var croppedVolume = oar.SegmentVolume.Sub(ptvMargin);
+                    if (croppedVolume == null)
+                    {
+                        falhas.Add($"{oar.Id}: subtração retornou nulo.");
+                        continue;
+                    }
+
+                    var otmStruct = currentStructureSet.AddStructure(oar.DicomType, otmId);
+                    if (oar.IsHighResolution)
+                        otmStruct.ConvertToHighResolution();
+
+                    otmStruct.SegmentVolume = croppedVolume;
+                    anyCropped = true;
                 }
-
-                if (!intersects || ptvMarginVolume == null)
-                    continue;
-
-                string otmId = $"{oar.Id}_OTM";
-
-                var existingOtm = currentStructureSet.Structures.FirstOrDefault(s => s.Id == otmId);
-                if (existingOtm != null)
-                    currentStructureSet.RemoveStructure(existingOtm);
-
-                if (!currentStructureSet.CanAddStructure(oar.DicomType, otmId))
-                    continue;
-
-                var croppedVolume = oar.SegmentVolume.Sub(ptvMarginVolume);
-                if (croppedVolume == null)
-                    continue;
-
-                var otmStruct = currentStructureSet.AddStructure(oar.DicomType, otmId);
-                if (oar.IsHighResolution)
-                    otmStruct.ConvertToHighResolution();
-
-                otmStruct.SegmentVolume = croppedVolume;
-                anyCropped = true;
+                catch (Exception ex)
+                {
+                    falhas.Add($"{oar.Id}: {ex.Message}");
+                }
             }
 
             app.SaveModifications();   // salva tudo de uma vez só, no final
 
             //==========================================================
+            // DIAGNÓSTICO PÓS-SAVE
+            //==========================================================
+            // Relemos Volume/IsEmpty DEPOIS do SaveModifications e
+            // buscando a estrutura de novo pelo Id (em vez de reusar a
+            // referência antiga) — se antes esses valores estavam sendo
+            // lidos antes de o ESAPI "commitar" a geometria, isso corrige
+            // o diagnóstico. Isso também é mais confiável pra decidir no
+            // futuro se um _OTM deve ou não ser removido automaticamente.
+            var linhasVolume = new List<string>();
+            foreach (var oar in oars)
+            {
+                string otmId = $"{oar.Id}_OTM";
+                var otm = currentStructureSet.Structures.FirstOrDefault(s => s.Id == otmId);
+                if (otm == null)
+                    linhasVolume.Add($"{oar.Id}: {otmId} não existe.");
+                else
+                    linhasVolume.Add($"{oar.Id}: original={oar.Volume:0.0}cm3, {otmId}={otm.Volume:0.0}cm3, IsEmpty={otm.IsEmpty}, HasSegment={otm.HasSegment}");
+            }
+
+            //==========================================================
             // MENSAGEM FINAL + LIMPEZA
             //==========================================================
 
-            if (anyCropped)
-                MessageBox.Show($"{ringStructure.Id} created. OARs cropped and OTM structures created.");
-            else
-                MessageBox.Show($"{ringStructure.Id} created. No OARs intersected any PTV — nothing cropped.");
+            string msg = $"{ringStructure.Id} created. PTV usado no crop: {selectedStructure.Id}.\n\n" +
+                         "Volumes:\n" + string.Join("\n", linhasVolume);
+
+            if (falhas.Any())
+                msg += "\n\nFalhas:\n" + string.Join("\n", falhas);
+
+            MessageBox.Show(msg);
 
             // Se quiser fechar o paciente e resetar a tela ao final de tudo:
             // textBox1.Text = string.Empty;
