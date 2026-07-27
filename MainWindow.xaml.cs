@@ -200,9 +200,10 @@ namespace Aneis_e_estruturas_de_OTM
                 return;
             }
 
-            //------------------------------------------
-            // Remove existing structures if present
-            //------------------------------------------
+            //==========================================================
+            // ETAPA 1 - CRIAR O RING
+            //==========================================================
+
             string innerId = $"{selectedStructure.Id}_inner";
             string outerId = $"{selectedStructure.Id}_outer";
             string ringId = $"{selectedStructure.Id}_Ring";
@@ -219,35 +220,23 @@ namespace Aneis_e_estruturas_de_OTM
             if (ringStruct != null)
                 currentStructureSet.RemoveStructure(ringStruct);
 
-            //------------------------------------------
-            // Create INNER structure
-            //------------------------------------------
-
             if (!currentStructureSet.CanAddStructure("CONTROL", innerId))
             {
                 MessageBox.Show($"{innerId} already exists and cannot be removed.");
                 return;
             }
 
-            Structure innerStructure =
-                currentStructureSet.AddStructure("CONTROL", innerId);
-
+            Structure innerStructure = currentStructureSet.AddStructure("CONTROL", innerId);
             if (selectedStructure.IsHighResolution)
                 innerStructure.ConvertToHighResolution();
 
             SegmentVolume innerVolume = selectedStructure.Margin(innerMargin);
-
             if (innerVolume == null)
             {
                 MessageBox.Show("Unable to create inner margin.");
                 return;
             }
-
             innerStructure.SegmentVolume = innerVolume;
-
-            //------------------------------------------
-            // Create OUTER structure
-            //------------------------------------------
 
             if (!currentStructureSet.CanAddStructure("CONTROL", outerId))
             {
@@ -255,25 +244,17 @@ namespace Aneis_e_estruturas_de_OTM
                 return;
             }
 
-            Structure outerStructure =
-                currentStructureSet.AddStructure("CONTROL", outerId);
-
+            Structure outerStructure = currentStructureSet.AddStructure("CONTROL", outerId);
             if (selectedStructure.IsHighResolution)
                 outerStructure.ConvertToHighResolution();
 
             SegmentVolume outerVolume = selectedStructure.Margin(outerMargin);
-
             if (outerVolume == null)
             {
                 MessageBox.Show("Unable to create outer margin.");
                 return;
             }
-
             outerStructure.SegmentVolume = outerVolume;
-
-            //------------------------------------------
-            // Create Ring
-            //------------------------------------------
 
             if (!currentStructureSet.CanAddStructure("CONTROL", ringId))
             {
@@ -281,81 +262,47 @@ namespace Aneis_e_estruturas_de_OTM
                 return;
             }
 
-            Structure ringStructure =
-                currentStructureSet.AddStructure("CONTROL", ringId);
-
+            Structure ringStructure = currentStructureSet.AddStructure("CONTROL", ringId);
             if (selectedStructure.IsHighResolution)
                 ringStructure.ConvertToHighResolution();
 
-            SegmentVolume ringVolume =
-                outerStructure.SegmentVolume.Sub(innerStructure.SegmentVolume);
-
+            SegmentVolume ringVolume = outerStructure.SegmentVolume.Sub(innerStructure.SegmentVolume);
             if (ringVolume == null)
             {
                 MessageBox.Show("Boolean subtraction failed.");
                 return;
             }
-
             ringStructure.SegmentVolume = ringVolume;
-
-            //------------------------------------------
-            // Remove temporary structures
-            //------------------------------------------
 
             currentStructureSet.RemoveStructure(innerStructure);
             currentStructureSet.RemoveStructure(outerStructure);
 
-            app.SaveModifications();
+            app.SaveModifications();   // salva o Ring antes de seguir pro crop
 
-            MessageBox.Show($"{ringStructure.Id} created successfully.");
+            //==========================================================
+            // ETAPA 2 - CROPAR OS OARs (mesma lógica do botão antigo)
+            //==========================================================
 
-            app.ClosePatient();
-
-            //// Clear patient search box and reset UI for new search
-            //textBox1.Text = string.Empty;
-            //clearComboBoxes();
-            //comboBox4.ItemsSource = null;
-            //comboBox4.SelectedItem = null;
-            //currentPatient = null;
-            //currentStructureSet = null;
-            //currentCourse = null;
-        }
-        //teste para subir o projeto no GitHub
-
-        //teste 2 para GitHub
-
-        // Add this method to MainWindow class
-        private void Button_CropOARs_Click(object sender, RoutedEventArgs e)
-        {
-            if (currentStructureSet == null)
-            {
-                MessageBox.Show("No structure set loaded.");
-                return;
-            }
-
-            // Find all PTV structures (assuming they contain "PTV" in the Id, case-insensitive)
             var ptvs = currentStructureSet.Structures
                 .Where(s => s.Id.IndexOf("PTV", StringComparison.OrdinalIgnoreCase) >= 0 && !s.IsEmpty && s.HasSegment)
                 .ToList();
 
             if (!ptvs.Any())
             {
-                MessageBox.Show("No PTV structure found.");
+                MessageBox.Show($"{ringStructure.Id} created successfully. No PTV found for cropping.");
                 return;
             }
 
-            // Get all OARs (DicomType == "ORGAN", not empty, not already OTM, not CONTROL structures)
             var oars = currentStructureSet.Structures
                 .Where(s => s.DicomType.Equals("ORGAN", StringComparison.OrdinalIgnoreCase)
                     && !s.Id.ToUpper().Contains("OTM")
                     && !s.IsEmpty
-                    && s.HasSegment
-                    && !s.DicomType.Equals("CONTROL", StringComparison.OrdinalIgnoreCase))
+                    && s.HasSegment)
                 .ToList();
 
             if (!oars.Any())
             {
-                MessageBox.Show("No OAR structures found.");
+                MessageBox.Show($"{ringStructure.Id} created successfully. No OAR found for cropping.");
                 return;
             }
 
@@ -388,27 +335,18 @@ namespace Aneis_e_estruturas_de_OTM
 
                 string otmId = $"{oar.Id}_OTM";
 
-                // Remove existing OTM structure if present
                 var existingOtm = currentStructureSet.Structures.FirstOrDefault(s => s.Id == otmId);
                 if (existingOtm != null)
                     currentStructureSet.RemoveStructure(existingOtm);
 
                 if (!currentStructureSet.CanAddStructure(oar.DicomType, otmId))
-                {
-                    MessageBox.Show($"Cannot add structure {otmId}.");
                     continue;
-                }
 
                 var croppedVolume = oar.SegmentVolume.Sub(ptvMarginVolume);
-
                 if (croppedVolume == null)
-                {
-                    MessageBox.Show($"Boolean subtraction failed for {oar.Id}.");
                     continue;
-                }
 
                 var otmStruct = currentStructureSet.AddStructure(oar.DicomType, otmId);
-
                 if (oar.IsHighResolution)
                     otmStruct.ConvertToHighResolution();
 
@@ -416,24 +354,26 @@ namespace Aneis_e_estruturas_de_OTM
                 anyCropped = true;
             }
 
-            if (anyCropped)
-            {
-                app.SaveModifications();
-                MessageBox.Show("OARs cropped and OTM structures created.");
-            }
-            else
-            {
-                MessageBox.Show("No OARs of type ORGAN intersect with any PTV. No OTM structures created.");
-            }
+            app.SaveModifications();   // salva tudo de uma vez só, no final
 
-            // Clear patient search box and reset UI for new search
-            textBox1.Text = string.Empty;
-            clearComboBoxes();
-            comboBox4.ItemsSource = null;
-            comboBox4.SelectedItem = null;
-            currentPatient = null;
-            currentStructureSet = null;
-            currentCourse = null;
+            //==========================================================
+            // MENSAGEM FINAL + LIMPEZA
+            //==========================================================
+
+            if (anyCropped)
+                MessageBox.Show($"{ringStructure.Id} created. OARs cropped and OTM structures created.");
+            else
+                MessageBox.Show($"{ringStructure.Id} created. No OARs intersected any PTV — nothing cropped.");
+
+            // Se quiser fechar o paciente e resetar a tela ao final de tudo:
+            // textBox1.Text = string.Empty;
+            // clearComboBoxes();
+            // comboBox4.ItemsSource = null;
+            // comboBox4.SelectedItem = null;
+            // currentPatient = null;
+            // currentStructureSet = null;
+            // currentCourse = null;
+            // app.ClosePatient();
         }
     }
 }
